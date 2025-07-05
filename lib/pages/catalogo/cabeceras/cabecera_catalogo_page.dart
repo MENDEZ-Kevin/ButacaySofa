@@ -29,14 +29,12 @@ class CabecerasCatalogoPage extends StatelessWidget {
           }).toList();
 
           return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            shrinkWrap: true,
-            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(12),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.8,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.65, // Más espacio vertical
             ),
             itemCount: cabeceras.length,
             itemBuilder: (context, index) => CabeceraCard(cabecera: cabeceras[index]),

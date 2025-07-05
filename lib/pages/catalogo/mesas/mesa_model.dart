@@ -4,6 +4,7 @@ class Mesa {
   final String forma;
   final String funcionalidad;
   final String imagenUrl;
+  final double precio;
 
   Mesa({
     required this.id,
@@ -11,6 +12,7 @@ class Mesa {
     required this.forma,
     required this.funcionalidad,
     required this.imagenUrl,
+    required this.precio, 
   });
 
   factory Mesa.fromMap(Map<String, dynamic> data, String id) {
@@ -20,6 +22,7 @@ class Mesa {
       forma: data['forma'] ?? '',
       funcionalidad: data['funcionalidad'] ?? '',
       imagenUrl: data['imagenUrl'] ?? '',
+      precio: (data['precio'] != null) ? (data['precio'] as num).toDouble() : 0.0,
     );
   }
 
@@ -29,6 +32,7 @@ class Mesa {
       'forma': forma,
       'funcionalidad': funcionalidad,
       'imagenUrl': imagenUrl,
+      'precio': precio,
     };
   }
 }

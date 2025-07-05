@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'mesa_model.dart';
 
@@ -17,11 +19,72 @@ class MesaCard extends StatelessWidget {
     }
   }
 
-  void agregarAlCarrito(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${mesa.material} agregado al carrito'),
-        duration: const Duration(seconds: 2),
+  Future<void> _agregarAlCarrito(BuildContext context, int cantidad) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debe iniciar sesión para agregar al carrito.')),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('carrito')
+          .doc(mesa.id)
+          .set({
+        'material': mesa.material,
+        'forma': mesa.forma,
+        'funcionalidad': mesa.funcionalidad,
+        'precio': mesa.precio,
+        'cantidad': cantidad,
+        'imagenUrl': mesa.imagenUrl,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${mesa.material} x$cantidad agregado al carrito')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al agregar al carrito: $e')),
+      );
+    }
+  }
+
+  void _mostrarDialogoCantidad(BuildContext context) {
+    final TextEditingController cantidadController = TextEditingController(text: '1');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Agregar al carrito'),
+        content: TextField(
+          controller: cantidadController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Cantidad'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final int cantidad = int.tryParse(cantidadController.text) ?? 1;
+              if (cantidad > 0) {
+                _agregarAlCarrito(context, cantidad);
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cantidad inválida')),
+                );
+              }
+            },
+            child: const Text('Agregar'),
+          ),
+        ],
       ),
     );
   }
@@ -31,36 +94,44 @@ class MesaCard extends StatelessWidget {
     final imagenUrl = convertirEnlaceDriveADirecto(mesa.imagenUrl);
 
     return Card(
-      margin: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          ListTile(
-            leading: Image.network(
-              imagenUrl,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.broken_image, size: 50),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen más grande, full width
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                imagenUrl,
+                width: double.infinity,
+                height: 200, // altura aumentada
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100),
+              ),
             ),
-            title: Text('Material: ${mesa.material}'),
-            subtitle: Text(
-              'Forma: ${mesa.forma}\nFuncionalidad: ${mesa.funcionalidad}',
+            const SizedBox(height: 12),
+            Text(
+              'Material: ${mesa.material}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            isThreeLine: true,
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12, bottom: 8),
+            Text('Forma: ${mesa.forma}'),
+            Text('Funcionalidad: ${mesa.funcionalidad}'),
+            Text('Precio: S/ ${mesa.precio.toStringAsFixed(2)}'),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
-                onPressed: () => agregarAlCarrito(context),
+                onPressed: () => _mostrarDialogoCantidad(context),
                 icon: const Icon(Icons.add_shopping_cart),
                 label: const Text('Agregar al carrito'),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

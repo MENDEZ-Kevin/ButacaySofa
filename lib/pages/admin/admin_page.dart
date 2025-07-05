@@ -14,32 +14,44 @@ class AdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Panel de Administración'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await _authService.logout();
-              Navigator.pushReplacementNamed(context, '/');
-            },
-          )
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: GridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          children: [
-            _botonModulo(context, 'Sofás', Icons.weekend, const SofaPage()),
-            _botonModulo(context, 'Butacas', Icons.event_seat, const ButacasPage()),
-            _botonModulo(context, 'Mesas', Icons.table_bar, const MesaPage()),
-            _botonModulo(context, 'Comedores', Icons.chair, const ComedoresPage()),
-            _botonModulo(context, 'Cabeceras', Icons.bed, const CabecerasPage()),
+    return WillPopScope(
+      onWillPop: () async {
+        // Bloquear botón atrás del sistema
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debe cerrar sesión para salir del panel')),
+        );
+        return false; // no permite salir con botón atrás
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Administración de  Butaca y Sofa'),
+          backgroundColor: Colors.deepOrange,
+          automaticallyImplyLeading: false, // oculta botón "back"
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await _authService.logout();
+                Navigator.pushReplacementNamed(context, '/');
+              },
+            )
           ],
+        ),
+        body: Padding(
+          
+          padding: const EdgeInsets.all(20),
+          child: GridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: [
+              _botonModulo(context, 'Sofás', Icons.weekend, SofaPage()),
+              _botonModulo(context, 'Butacas', Icons.event_seat, ButacasPage()),
+              _botonModulo(context, 'Mesas', Icons.table_bar, MesaPage()),
+              _botonModulo(context, 'Comedores', Icons.chair, ComedoresPage()),
+              _botonModulo(context, 'Cabeceras', Icons.bed, CabecerasPage()),
+            ],
+          ),
         ),
       ),
     );
@@ -49,8 +61,10 @@ class AdminPage extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.blueGrey,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.deepOrange,
+        elevation: 8,
+        shadowColor: Colors.deepOrangeAccent,
       ),
       onPressed: () => Navigator.push(
         context,
@@ -61,7 +75,11 @@ class AdminPage extends StatelessWidget {
         children: [
           Icon(icono, size: 40, color: Colors.white),
           const SizedBox(height: 10),
-          Text(titulo, style: const TextStyle(fontSize: 16, color: Colors.white)),
+          Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );

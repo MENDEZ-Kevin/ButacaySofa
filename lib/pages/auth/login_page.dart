@@ -30,23 +30,48 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar Sesión')),
+      backgroundColor: Colors.amber.shade50,
+      appBar: AppBar(
+        title: const Text('Iniciar Sesión'),
+        backgroundColor: Colors.brown[300],
+        centerTitle: true,
+        elevation: 4,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
+            const Text(
+              'Butaca y Sofá',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 160, 116, 100),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 28),
             TextField(
               controller: emailCtrl,
-              decoration: const InputDecoration(labelText: 'Correo electrónico'),
+              decoration: const InputDecoration(
+                labelText: 'Correo electrónico',
+                prefixIcon: Icon(Icons.email),
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: passCtrl,
-              decoration: const InputDecoration(labelText: 'Contraseña'),
               obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Contraseña',
+                prefixIcon: Icon(Icons.lock),
+                border: OutlineInputBorder(),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ElevatedButton(
-              child: const Text('Iniciar Sesión'),
               onPressed: () async {
                 final user = await _authService.login(
                   emailCtrl.text.trim(),
@@ -54,8 +79,6 @@ class _LoginPageState extends State<LoginPage> {
                 );
                 if (user != null) {
                   final nombreUsuario = await _getNombreUsuario(user.uid);
-                  print('Nombre usuario: $nombreUsuario');
-
                   if (user.email == 'butacaysofa@admin.com') {
                     Navigator.pushReplacementNamed(context, '/admin', arguments: nombreUsuario);
                   } else {
@@ -67,16 +90,41 @@ class _LoginPageState extends State<LoginPage> {
                   );
                 }
               },
+              style: _estiloBoton(),
+              child: const Text('Iniciar Sesión'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             ElevatedButton(
-              child: const Text('Entrar al catálogo sin iniciar sesión'),
               onPressed: () {
                 Navigator.pushReplacementNamed(context, '/catalogo');
               },
+              style: _estiloBoton(colorClaro: true),
+              child: const Text('Entrar al catálogo sin iniciar sesión'),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  ButtonStyle _estiloBoton({bool colorClaro = false}) {
+    final baseColor = colorClaro ? Colors.brown.shade400 : Colors.brown.shade700;
+    final hoverColor = colorClaro ? Colors.brown.shade600 : Colors.brown.shade900;
+
+    return ButtonStyle(
+      backgroundColor: MaterialStateProperty.resolveWith<Color>(
+        (states) => states.contains(MaterialState.hovered) ? hoverColor : baseColor,
+      ),
+      padding: MaterialStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      ),
+      shape: MaterialStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      elevation: MaterialStateProperty.all(5),
+      foregroundColor: MaterialStateProperty.all(Colors.white),
+      textStyle: MaterialStateProperty.all(
+        const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }

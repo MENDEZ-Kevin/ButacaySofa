@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'cabecera_model.dart';
 
 class CabeceraCard extends StatelessWidget {
@@ -17,11 +19,79 @@ class CabeceraCard extends StatelessWidget {
     }
   }
 
-  void agregarAlCarrito(BuildContext context) {
+  void _mostrarSnackBar(BuildContext context, String mensaje, {bool esError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${cabecera.material} agregado al carrito'),
-        duration: const Duration(seconds: 2),
+        content: Text(mensaje),
+        backgroundColor: esError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _agregarAlCarrito(BuildContext context, int cantidad) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      _mostrarSnackBar(context, 'Necesita iniciar sesión', esError: true);
+      return;
+    }
+
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('carrito')
+          .doc(cabecera.id);
+
+      await docRef.set({
+        'material': cabecera.material,
+        'diseno': cabecera.disenoDecorativo,
+        'altura': cabecera.altura,
+        'precio': cabecera.precio,
+        'imagen': cabecera.imagenUrl,
+        'cantidad': cantidad,
+      });
+
+      _mostrarSnackBar(context, '${cabecera.material} x$cantidad agregado al carrito');
+    } catch (e) {
+      _mostrarSnackBar(context, 'Error al agregar al carrito: $e', esError: true);
+    }
+  }
+
+  void _mostrarDialogoCantidad(BuildContext context) {
+    final TextEditingController cantidadController = TextEditingController(text: '1');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Agregar al carrito'),
+        content: TextField(
+          controller: cantidadController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Cantidad',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final int cantidad = int.tryParse(cantidadController.text.trim()) ?? 0;
+
+              if (cantidad > 0) {
+                _agregarAlCarrito(context, cantidad);
+                Navigator.pop(context);
+              } else {
+                _mostrarSnackBar(context, 'Cantidad inválida', esError: true);
+              }
+            },
+            child: const Text('Agregar'),
+          ),
+        ],
       ),
     );
   }
@@ -31,39 +101,53 @@ class CabeceraCard extends StatelessWidget {
     final imagenUrl = convertirEnlaceDriveADirecto(cabecera.imagenUrl);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
+      elevation: 3,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 imagenUrl,
                 width: double.infinity,
-                height: 200,
+                height: 100,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 80),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              'Material: ${cabecera.material}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              cabecera.material,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            Text('Diseño: ${cabecera.disenoDecorativo}'),
-            Text('Altura: ${cabecera.altura} m'),
-            Text('Precio: S/ ${cabecera.precio.toStringAsFixed(2)}'),
-            const SizedBox(height: 12),
+            Text(
+              'Diseño: ${cabecera.disenoDecorativo}',
+              style: const TextStyle(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              'Altura: ${cabecera.altura} m',
+              style: const TextStyle(fontSize: 12),
+            ),
+            Text(
+              'S/ ${cabecera.precio.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 14, color: Colors.green),
+            ),
+            const Spacer(),
             Align(
               alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                onPressed: () => agregarAlCarrito(context),
+              child: IconButton(
                 icon: const Icon(Icons.add_shopping_cart),
-                label: const Text('Agregar al carrito'),
+                tooltip: 'Agregar al carrito',
+                color: Colors.blue,
+                onPressed: () => _mostrarDialogoCantidad(context),
               ),
             ),
           ],

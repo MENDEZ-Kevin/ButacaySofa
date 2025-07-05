@@ -77,7 +77,7 @@ class _ComedorFormState extends State<ComedorForm> {
               ),
               TextFormField(
                 controller: _tipoMesaController,
-                decoration: const InputDecoration(labelText: 'Tipo de Mesa'),
+                decoration: const InputDecoration(labelText: 'Tipo de Mesa / Sillas'),
                 validator: (value) => value!.isEmpty ? 'Requerido' : null,
               ),
               TextFormField(

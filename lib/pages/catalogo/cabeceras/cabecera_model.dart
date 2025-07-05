@@ -16,13 +16,17 @@ class Cabecera {
   });
 
   factory Cabecera.fromMap(Map<String, dynamic> map, String id) {
+    if (!map.containsKey('altura') || !map.containsKey('material') || !map.containsKey('precio')) {
+      throw ArgumentError('Faltan campos obligatorios en el mapa de Cabecera');
+    }
+
     return Cabecera(
       id: id,
       altura: map['altura'] ?? '',
       material: map['material'] ?? '',
       disenoDecorativo: map['diseno_decorativo'] ?? '',
       imagenUrl: map['imagenUrl'] ?? '',
-      precio: (map['precio'] != null) ? (map['precio'] as num).toDouble() : 0.0,
+      precio: (map['precio'] is num) ? (map['precio'] as num).toDouble() : 0.0,
     );
   }
 
@@ -34,5 +38,28 @@ class Cabecera {
       'imagenUrl': imagenUrl,
       'precio': precio,
     };
+  }
+
+  Cabecera copyWith({
+    String? id,
+    String? altura,
+    String? material,
+    String? disenoDecorativo,
+    String? imagenUrl,
+    double? precio,
+  }) {
+    return Cabecera(
+      id: id ?? this.id,
+      altura: altura ?? this.altura,
+      material: material ?? this.material,
+      disenoDecorativo: disenoDecorativo ?? this.disenoDecorativo,
+      imagenUrl: imagenUrl ?? this.imagenUrl,
+      precio: precio ?? this.precio,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Cabecera(id: $id, altura: $altura, material: $material, diseño: $disenoDecorativo, precio: $precio)';
   }
 }

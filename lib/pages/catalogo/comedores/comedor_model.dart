@@ -4,6 +4,7 @@ class Comedor {
   final String tipoMesa;
   final int capacidadPersonas;
   final String imagenUrl;
+  double precio;
 
   Comedor({
     required this.id,
@@ -11,6 +12,7 @@ class Comedor {
     required this.tipoMesa,
     required this.capacidadPersonas,
     required this.imagenUrl,
+    required this.precio,
   });
 
   factory Comedor.fromMap(Map<String, dynamic> data, String id) {
@@ -20,6 +22,7 @@ class Comedor {
       tipoMesa: data['tipo_mesa'] ?? '',
       capacidadPersonas: data['capacidad_personas'] ?? 0,
       imagenUrl: data['imagenUrl'] ?? '',
+      precio: (data['precio'] != null) ? (data['precio'] as num).toDouble() : 0.0,
     );
   }
 
@@ -29,6 +32,7 @@ class Comedor {
       'tipo_mesa': tipoMesa,
       'capacidad_personas': capacidadPersonas,
       'imagenUrl': imagenUrl,
+      'precio': precio,
     };
   }
 }

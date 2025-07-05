@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'butaca_model.dart';
 
 class ButacaCard extends StatelessWidget {
@@ -18,11 +19,70 @@ class ButacaCard extends StatelessWidget {
     }
   }
 
-  void agregarAlCarrito(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${butaca.material} agregado al carrito'),
-        duration: const Duration(seconds: 2),
+  Future<void> _agregarAlCarrito(BuildContext context, int cantidad) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Necesita inicio de sesión')),
+      );
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('carrito')
+          .doc(butaca.id)
+          .set({ 
+            'material': butaca.material,
+            'precio': butaca.precio,
+            'cantidad': cantidad,
+            'imagen': butaca.imagenUrl,
+          });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${butaca.material} x$cantidad agregado al carrito')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al agregar al carrito: $e')),
+      );
+    }
+  }
+
+  void _mostrarDialogoCantidad(BuildContext context) {
+    final TextEditingController cantidadController = TextEditingController(text: '1');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Agregar al carrito'),
+        content: TextField(
+          controller: cantidadController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Cantidad'),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          ElevatedButton(
+            child: const Text('Agregar'),
+            onPressed: () {
+              final int cantidad = int.tryParse(cantidadController.text) ?? 1;
+
+              if (cantidad > 0) {
+                _agregarAlCarrito(context, cantidad);
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                   const SnackBar(content: Text('Cantidad inválida')),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -32,6 +92,7 @@ class ButacaCard extends StatelessWidget {
     final imagenUrl = convertirEnlaceDriveADirecto(butaca.imagenUrl);
 
     return Card(
+      color: Colors.grey[100], // Color de fondo de la carta
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 4,
@@ -47,7 +108,8 @@ class ButacaCard extends StatelessWidget {
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 100),
               ),
             ),
             const SizedBox(height: 12),
@@ -56,53 +118,20 @@ class ButacaCard extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text('Diseño: ${butaca.diseno}'),
-            Text('Capacidad giratoria: ${butaca.capacidadGiratoria ? "Sí" : "No"}'),
+            Text('Giratoria: ${butaca.capacidadGiratoria ? "Sí" : "No"}'),
             Text('Precio: S/ ${butaca.precio.toStringAsFixed(2)}'),
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
-                onPressed: () => agregarAlCarrito(context),
+                onPressed: () => _mostrarDialogoCantidad(context),
                 icon: const Icon(Icons.add_shopping_cart),
                 label: const Text('Agregar al carrito'),
               ),
-            ),
+            )
           ],
         ),
       ),
-    );
-  }
-}
-
-class ButacaList extends StatelessWidget {
-  const ButacaList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('butacas').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('No hay butacas disponibles'));
-        }
-
-        return ListView(
-          children: snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final butaca = Butaca(
-              material: data['material'] ?? 'Desconocido',
-              diseno: data['diseno'] ?? 'Sin diseño',
-              capacidadGiratoria: data['capacidadGiratoria'] ?? false,
-              precio: (data['precio'] ?? 0).toDouble(),
-              imagenUrl: data['imagenUrl'] ?? '',
-            );
-            return ButacaCard(butaca: butaca);
-          }).toList(),
-        );
-      },
     );
   }
 }

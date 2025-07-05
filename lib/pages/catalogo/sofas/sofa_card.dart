@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'sofa_model.dart';
 
@@ -17,11 +19,72 @@ class SofaCard extends StatelessWidget {
     }
   }
 
-  void agregarAlCarrito(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${sofa.material} agregado al carrito'),
-        duration: const Duration(seconds: 2),
+  Future<void> _agregarAlCarrito(BuildContext context, int cantidad) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Necesita inicio de sesión')),
+      );
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('carrito')
+          .doc(sofa.id)
+          .set({
+        'material': sofa.material,
+        'diseno': sofa.diseno,
+        'numero_piezas': sofa.numeroPiezas,
+        'precio': sofa.precio,
+        'imagen': sofa.imagen,
+        'cantidad': cantidad,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${sofa.material} x$cantidad agregado al carrito')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al agregar al carrito: $e')),
+      );
+    }
+  }
+
+  void _mostrarDialogoCantidad(BuildContext context) {
+    final TextEditingController cantidadController = TextEditingController(text: '1');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Agregar al carrito'),
+        content: TextField(
+          controller: cantidadController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Cantidad'),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          ElevatedButton(
+            child: const Text('Agregar'),
+            onPressed: () {
+              final int cantidad = int.tryParse(cantidadController.text) ?? 1;
+
+              if (cantidad > 0) {
+                _agregarAlCarrito(context, cantidad);
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cantidad inválida')),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -31,36 +94,44 @@ class SofaCard extends StatelessWidget {
     final imagenUrl = convertirEnlaceDriveADirecto(sofa.imagen);
 
     return Card(
-      margin: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          ListTile(
-            leading: Image.network(
-              imagenUrl,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.broken_image, size: 50),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen agrandada
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                imagenUrl,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100),
+              ),
             ),
-            title: Text('Material: ${sofa.material}'),
-            subtitle: Text(
-              'Diseño: ${sofa.diseno}\nNúmero de piezas: ${sofa.numeroPiezas}',
+            const SizedBox(height: 12),
+            Text(
+              'Material: ${sofa.material}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            isThreeLine: true,
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12, bottom: 8),
+            Text('Diseño: ${sofa.diseno}'),
+            Text('Número de piezas: ${sofa.numeroPiezas}'),
+            Text('Precio: S/ ${sofa.precio.toStringAsFixed(2)}'),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
-                onPressed: () => agregarAlCarrito(context),
+                onPressed: () => _mostrarDialogoCantidad(context),
                 icon: const Icon(Icons.add_shopping_cart),
                 label: const Text('Agregar al carrito'),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
