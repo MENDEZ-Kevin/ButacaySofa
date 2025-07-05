@@ -1,16 +1,12 @@
-# butacaysofa
+# 🛋️ Butaca y Sofá
 
-A new Flutter project.
+**Butaca y Sofá** es una tienda virtual desarrollada en Flutter que permite a los usuarios navegar por un catálogo de productos, agregar items al carrito de compras, ver su ubicación en el mapa, iniciar sesión y administrar productos desde un panel de administración.
 
-## Getting Started
+## 🚀 Características principales
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 🛍️ Catálogo de productos: Sofás, Butacas, Mesas, Comedores y Cabeceras
+- 📍 Ubicación de la tienda en Google Maps
+- 🛒 Carrito de compras con productos agregados
+- 🔐 Registro e inicio de sesión de usuarios con Firebase Auth
+- 🛠️ Panel de administración para CRUD de productos (Firebase Firestore)
+- 📦 Imágenes alojadas en Google Drive
